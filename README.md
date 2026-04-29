@@ -39,7 +39,7 @@ docker-compose logs mongodb
 cp .env.example .env
 ```
 
-Edit `.env` and set your JWT secret:
+Edit `.env` and set your JWT secret:2
 ```
 JWT_SECRET=your-super-secret-key-change-in-production-minimum-32-characters
 ```
@@ -105,7 +105,7 @@ auth-api/
 
 ### Step 1: Basic Setup (5 points)
 
-**File:** `src/server.js`
+**File:** `src/server.js` 
 
 Read environment variables:
 - `PORT` from `process.env.PORT` (default: 3000)
