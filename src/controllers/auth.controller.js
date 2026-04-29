@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { User } from '../models/user.model.js';
 import { signToken } from '../utils/jwt.js';
+import { errorHandler } from '../middlewares/error.middleware.js';
 
 /**
  * TODO: Register a new user
@@ -13,8 +14,37 @@ import { signToken } from '../utils/jwt.js';
  */
 export async function register(req, res, next) {
   try {
+    const { name, email, password } = req.body;
+
+    const existing = await User.findOne({ email });
+    
+    if (existing) return res.status(409).json({
+      error: { message: "Email already exists" }
+    })
+
+    const user = await User.create({
+      name,
+      email,
+      password,
+    })
+
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    return res.status(201).json({
+      success: true,
+      user: userObj
+    })
     // Your code here
   } catch (error) {
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        error: {
+          message: error.message
+        }
+      });
+    }
+
     next(error);
   }
 }
@@ -32,6 +62,28 @@ export async function register(req, res, next) {
  */
 export async function login(req, res, next) {
   try {
+    let {email, password} = req.body;
+
+    email = email.toLowerCase();
+
+
+    const user = await User.findOne({email}).select("+password");
+    if(!user || !(await bcrypt.compare(password,user.password))){
+       return res.status(401).json({
+      error: { message: "Invalid credentials" }
+    })    
+}
+   
+    const token = signToken({userId:user._id, email:user.email,role:user.role})
+
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    return res.status(200).json({
+      success: true,
+      token,
+      user: userObj
+    })
     // Your code here
   } catch (error) {
     next(error);
@@ -47,7 +99,13 @@ export async function login(req, res, next) {
 export async function me(req, res, next) {
   try {
     // Your code here
+    const userObj = req.user.toObject();
+
+    return res.status(200).json({
+      user:userObj
+    });
   } catch (error) {
+    
     next(error);
   }
 }

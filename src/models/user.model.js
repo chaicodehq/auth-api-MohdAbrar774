@@ -11,18 +11,52 @@ import bcrypt from 'bcryptjs';
  * - password: String, required, minlength 6
  *   IMPORTANT: Add { select: false } so password isn't returned by default
  * - role: String, enum ['user', 'admin'], default 'user'
- *
- * Options:
- * - Enable timestamps (createdAt, updatedAt)
- */
-const userSchema = new mongoose.Schema(
-  {
+*
+* Options:
+* - Enable timestamps (createdAt, updatedAt)
+*/
+const userSchema = new mongoose.Schema({
     // Your schema fields here
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      minLength: 2,
+      maxLength: 50
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Please use a valid email address"]
+    },
+    password: { 
+      type: String,
+      required: true,
+      minlength: 6,
+      select: false
+     },
+    role: { 
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user'
+     }
   },
   {
+    timestamps: true
     // Schema options here
   }
 );
+
+userSchema.pre('save', async function(next){
+  if (!this.isModified('password')) return next();
+
+  this.password = await bcrypt.hash(this.password,10);
+  next();
+});
+export const User = mongoose.model("User", userSchema);
 
 /**
  * TODO: Add pre-save hook to hash password
@@ -35,9 +69,9 @@ const userSchema = new mongoose.Schema(
  * Example structure:
  * userSchema.pre('save', async function(next) {
  *   // Only hash if password is modified
- *   
+ *
  *   // Hash password and replace
- *   
+ *
  * });
  */
 
